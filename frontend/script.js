@@ -75,19 +75,17 @@
     editingInput.focus();
 
     const changeNameByID = async (value) => {
-
-      if (currentTask.id === +modifyingTodoID && normalizeStr(value)) {
-        const response = await fetch(`${URL}tasks/${modifyingTodoID}/`, {
-          method: "PATCH",
+      if (normalizeStr(value)) {
+        await fetch(`${URL}tasks/${modifyingTodoID}/`, {
+          method: 'PATCH',
           headers: {
-            'Accept': 'application/json, text/plain, */*',
-            'Content-Type': 'application/json'
+            Accept: 'application/json, text/plain, */*',
+            'Content-Type': 'application/json',
           },
-          body: JSON.stringify({name: normalizeStr(value)})
+          body: JSON.stringify({ name: normalizeStr(value) }),
         });
         // return await response.json();
         getAllTasks();
-        
       }
     };
 
@@ -217,7 +215,6 @@
   };
 
   const render = () => {
-
     list.innerHTML = '';
     pagination.innerHTML = '';
 
@@ -283,28 +280,28 @@
         }
       }
 
-      const response = await fetch(`${URL}tasks/`, {
-        method: "POST",
+      await fetch(`${URL}tasks/`, {
+        method: 'POST',
         headers: {
-          'Accept': 'application/json, text/plain, */*',
-          'Content-Type': 'application/json'
+          Accept: 'application/json, text/plain, */*',
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify(currentTask),
       });
         // return await response.json();
-        getAllTasks();
-      
-        // tasks.push(currentTask);
+      getAllTasks();
+
+      // tasks.push(currentTask);
     }
   };
 
   const deleteTodo = async (modifyingTodoID) => {
     // tasks = tasks.filter((task) => task.id !== +modifyingTodoID);
-    const response = await fetch(`${URL}tasks/${modifyingTodoID}/`, {
-      method: "DELETE",
+    await fetch(`${URL}tasks/${modifyingTodoID}/`, {
+      method: 'DELETE',
       headers: {
-        'Accept': 'application/json, text/plain, */*',
-        'Content-Type': 'application/json'
+        Accept: 'application/json, text/plain, */*',
+        'Content-Type': 'application/json',
       },
     });
     // return await response.json();
@@ -321,18 +318,17 @@
       page -= 1;
     }
 
-    const currentTask = tasks.find(task => task.id === +modifyingTodoID)
-    
-    const response = await fetch(`${URL}tasks/${modifyingTodoID}/`, {
-      method: "PATCH",
+    const currentTask = tasks.find((task) => task.id === +modifyingTodoID);
+
+    await fetch(`${URL}tasks/${modifyingTodoID}/`, {
+      method: 'PATCH',
       headers: {
-        'Accept': 'application/json, text/plain, */*',
-        'Content-Type': 'application/json'
+        Accept: 'application/json, text/plain, */*',
+        'Content-Type': 'application/json',
       },
-      body: JSON.stringify({completed: !currentTask.completed})
+      body: JSON.stringify({ completed: !currentTask.completed }),
     });
-    
-    
+
     getAllTasks();
   };
 
@@ -364,25 +360,25 @@
     // futureStatus = !futureStatus;
     // page = 1;
     // render();
-    const response = await fetch(`${URL}complete-all/`, {
-      method: "PUT",
+    await fetch(`${URL}complete-all/`, {
+      method: 'PUT',
       headers: {
-        'Accept': 'application/json, text/plain, */*',
-        'Content-Type': 'application/json'
+        Accept: 'application/json, text/plain, */*',
+        'Content-Type': 'application/json',
       },
-      body: JSON.stringify({completed: futureStatus})
+      body: JSON.stringify({ completed: futureStatus }),
     });
     futureStatus = !futureStatus;
     getAllTasks();
   };
 
   const clearCompleted = async () => {
-    const response = await fetch(`${URL}clear-completed/`, {
-      method: "DELETE",
+    await fetch(`${URL}clear-completed/`, {
+      method: 'DELETE',
       headers: {
-        'Accept': 'application/json, text/plain, */*',
-        'Content-Type': 'application/json'
-      }
+        Accept: 'application/json, text/plain, */*',
+        'Content-Type': 'application/json',
+      },
     });
     getAllTasks();
   };
@@ -397,9 +393,8 @@
   const getAllTasks = async () => {
     const response = await fetch(`${URL}tasks/`);
     tasks = await response.json();
-    console.log(tasks)
     render();
-  }
+  };
 
   getAllTasks();
 }());
