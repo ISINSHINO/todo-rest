@@ -3,25 +3,28 @@ from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from .serializers import TaskSerializer
 from .models import Task
-from .mixins import MyPaginationMixin
+from .mixins import TaskPagination
+from rest_framework.response import Response
 
-class TaskViewSet(viewsets.ViewSet, MyPaginationMixin):
+class TaskViewSet(viewsets.ViewSet, TaskPagination):
     """Task model set."""
-    allTasks = Task.objects.all()
-    activeTasks = Task.objects.filter(completed=False)
-    completedTasks = Task.objects.filter(completed=True)
+    paginator = TaskPagination()
 
     def list(self, request):
         """Return paginated tasks."""
-        page = self.paginate_queryset(self.queryset)
-        if page is not None:
-            serializer = self.serializer_class(page, many=True)
-            content = {
-                "all": self.allTasks,
-                "active": self.activeTasks,
-                "completed": self.completedTasks,
-            }
-            return self.get_paginated_response(serializer.data)
+        query_status_dict = {
+            'active' : Task.objects.filter(completed = False).order_by('pk'),
+            'completed' : Task.objects.filter(completed = True).order_by('pk'),
+            'all' : Task.objects.all().order_by('pk'),
+        }
+        allTasks = query_status_dict['all'].count()
+        activeTasks = query_status_dict['active'].count()
+        completedTasks = query_status_dict['completed'].count()
+        
+        queryset = query_status_dict[request.query_params['status']]
+        page = self.paginator.paginate_queryset(queryset = queryset, request = request)
+        serializer = TaskSerializer(page, many = True)
+        return self.paginator.get_paginated_response(serializer.data, allTasks, activeTasks, completedTasks)
 
     def retrieve(self, request, pk=None):
         """Return task with exact primary key."""

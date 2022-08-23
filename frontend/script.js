@@ -23,13 +23,15 @@
   const elementsByPage = 5;
   let page = 1;
   let pages = [];
-  let nextPage = '';
-  let prevPage = '';
 
   let tasksCount = 0;
+  let activeTasks = 0;
+  let completedTasks = 0;
+  let allTasks = 0;
+
   let tasks = [];
   let futureStatus = true;
-  let mode = 'All';
+  let mode = 'all';
 
   const { _ } = window;
 
@@ -51,13 +53,14 @@
     return tasksToRender;
   };
 
-  const getAllTasks = async (link = baseURL, path = 'tasks/?offset=0') => {
-    const response = await fetch(`${link}${path}`);
+  const getAllTasks = async (path = `tasks/?page=${page}`) => {
+    const response = await fetch(`${baseURL}${path}&status=${mode}`); //  "http://127.0.0.1:8000/" + 'tasks/?page=1&status=' + 'all'
     const data = await response.json();
-    tasksCount = data.count;
     tasks = data.results;
-    nextPage = data.next;
-    prevPage = data.previous;
+    tasksCount = data.count;
+    allTasks = data.all;
+    activeTasks = data.active;
+    completedTasks = data.completed;
     render();
   };
 
@@ -82,6 +85,8 @@
     taskContainer.append(editingInput);
     editingInput.focus();
 
+    // const currentTask = tasks.find((item) => item.id === +modifyingTodoID);
+
     const changeNameByID = async (value) => {
       if (normalizeStr(value)) {
         await fetch(`${baseURL}tasks/${modifyingTodoID}/`, {
@@ -90,7 +95,12 @@
             Accept: 'application/json, text/plain, */*',
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ name: normalizeStr(value) }),
+          body: JSON.stringify(
+            {
+              name: normalizeStr(value),
+              // checked: currentTask.completed,
+            },
+          ),
         });
         getAllTasks();
       }
@@ -134,13 +144,13 @@
       const tab = tabLink;
       switch (getTabName(tabLink)) {
         case 'All':
-          tab.textContent = `All ${tasks.length}`;
+          tab.textContent = `All ${allTasks}`;
           break;
         case 'Active':
-          tab.textContent = `Active ${tasks.filter((task) => !task.completed).length}`;
+          tab.textContent = `Active ${activeTasks}`;
           break;
         case 'Completed':
-          tab.textContent = `Completed ${tasks.filter((task) => task.completed).length}`;
+          tab.textContent = `Completed ${completedTasks}`;
           break;
         default:
           break;
@@ -153,20 +163,19 @@
       case '«':
         if (page !== 1 && tasks.length) {
           page -= 1;
-          getAllTasks(prevPage, '');
+          getAllTasks();
         }
         break;
       case '»':
         if (page !== pages.length && tasks.length) {
           page += 1;
-          getAllTasks(nextPage, '');
+          getAllTasks();
         }
         break;
       default:
         if (event.target.tagName.toLowerCase() === 'a') {
           page = +event.target.textContent;
-          getAllTasks(baseURL, `tasks/?offset=${(page - 1) * elementsByPage}`);
-          render();
+          getAllTasks();
         }
         break;
     }
@@ -200,7 +209,7 @@
   };
 
   const toggleClearAllButton = () => {
-    if (tasks.filter((item) => item.completed).length) {
+    if (completedTasks) {
       clearCompletedButton.style.display = 'block';
     } else {
       clearCompletedButton.style.display = 'none';
@@ -208,11 +217,11 @@
   };
 
   const toggleAllCheckbox = () => {
-    if (tasks.filter((item) => !item.completed).length > 0 || tasks.length === 0) {
+    if (activeTasks > 0 || allTasks === 0) {
       toggleAll.checked = false;
       futureStatus = true;
     }
-    if (tasks.filter((item) => !item.completed).length === 0 && tasks.length) {
+    if (activeTasks === 0 && allTasks) {
       toggleAll.checked = true;
       futureStatus = false;
     }
@@ -251,7 +260,7 @@
 
   const toggleTab = (tab) => {
     const iterTab = tab.querySelector('.nav-link');
-    const tabMode = getTabName(iterTab);
+    const tabMode = getTabName(iterTab).toLowerCase();
     if (tabMode !== mode) {
       iterTab.classList.remove('active');
     } else {
@@ -261,10 +270,10 @@
 
   const changeCurrentTab = (event) => {
     const currentTab = event.target;
-    mode = getTabName(currentTab);
+    mode = getTabName(currentTab).toLowerCase();
     page = 1;
     tabs.forEach((tab) => toggleTab(tab));
-    render();
+    getAllTasks();
   };
 
   const addTodo = async (event) => {
@@ -292,7 +301,7 @@
           page += 1;
         }
       }
-      getAllTasks(baseURL, `tasks/?offset=${(page - 1) * elementsByPage}`);
+      getAllTasks();
     }
   };
 
@@ -307,7 +316,7 @@
     if ((tasks.length === 1) && page === pages.length && page - 1 !== 0) {
       page -= 1;
     }
-    getAllTasks(baseURL, `tasks/?offset=${(page - 1) * elementsByPage}`);
+    getAllTasks();
   };
 
   const checkTodo = async (modifyingTodoID) => {
@@ -351,7 +360,7 @@
   };
 
   const checkAll = async () => {
-    page = 1;
+    // page = 1;
     await fetch(`${baseURL}complete-all/`, {
       method: 'PUT',
       headers: {
