@@ -2,7 +2,7 @@
   const ENTER = 'Enter';
   const ESCAPE = 'Escape';
 
-  const URL = 'http://127.0.0.1:8000/';
+  const baseURL = 'http://127.0.0.1:8000/';
 
   const list = document.querySelector('.list-group');
 
@@ -23,7 +23,10 @@
   const elementsByPage = 5;
   let page = 1;
   let pages = [];
+  let nextPage = '';
+  let prevPage = '';
 
+  let tasksCount = 0;
   let tasks = [];
   let futureStatus = true;
   let mode = 'All';
@@ -48,9 +51,14 @@
     return tasksToRender;
   };
 
-  const getTasksBySlice = () => {
-    const tasksByMode = getTasksByMode();
-    return tasksByMode.slice(((page * elementsByPage) - elementsByPage), (page * elementsByPage));
+  const getAllTasks = async (link = baseURL, path = 'tasks/?offset=0') => {
+    const response = await fetch(`${link}${path}`);
+    const data = await response.json();
+    tasksCount = data.count;
+    tasks = data.results;
+    nextPage = data.next;
+    prevPage = data.previous;
+    render();
   };
 
   const getTabName = (name) => name.textContent.trim().split(' ')[0];
@@ -76,7 +84,7 @@
 
     const changeNameByID = async (value) => {
       if (normalizeStr(value)) {
-        await fetch(`${URL}tasks/${modifyingTodoID}/`, {
+        await fetch(`${baseURL}tasks/${modifyingTodoID}/`, {
           method: 'PATCH',
           headers: {
             Accept: 'application/json, text/plain, */*',
@@ -84,7 +92,6 @@
           },
           body: JSON.stringify({ name: normalizeStr(value) }),
         });
-        // return await response.json();
         getAllTasks();
       }
     };
@@ -144,24 +151,21 @@
   const changePage = (event) => {
     switch (event.target.textContent.trim()) {
       case '«':
-        if (page !== 1) {
+        if (page !== 1 && tasks.length) {
           page -= 1;
-        } else {
-          page = pages.length;
+          getAllTasks(prevPage, '');
         }
-        render();
         break;
       case '»':
-        if (page !== pages.length) {
+        if (page !== pages.length && tasks.length) {
           page += 1;
-        } else {
-          page = 1;
+          getAllTasks(nextPage, '');
         }
-        render();
         break;
       default:
         if (event.target.tagName.toLowerCase() === 'a') {
           page = +event.target.textContent;
+          getAllTasks(baseURL, `tasks/?offset=${(page - 1) * elementsByPage}`);
           render();
         }
         break;
@@ -170,7 +174,7 @@
 
   const renderPagination = () => {
     pages = Array
-      .from(Array(Math.ceil(getTasksByMode().length / elementsByPage)), (_, index) => index + 1);
+      .from(Array(Math.ceil(tasksCount / elementsByPage)), (_, index) => index + 1);
     pagination.innerHTML = '';
     pagination.innerHTML += `
             <li class="page-item">
@@ -218,11 +222,11 @@
     list.innerHTML = '';
     pagination.innerHTML = '';
 
-    if (getTasksBySlice().length) {
+    if (tasks.length) {
       renderPagination();
     }
 
-    getTasksBySlice().forEach((task) => {
+    tasks.forEach((task) => {
       list.innerHTML += `
               <li
               data-id="${task.id}"
@@ -267,20 +271,12 @@
     event.preventDefault();
     if ((event.code === ENTER || event.type === 'click') && normalizeStr(taskInput.value).length) {
       const currentTask = {
-        // id: Date.now(),
         name: normalizeStr(taskInput.value),
         completed: false,
       };
       taskInput.value = '';
-      if (getTasksBySlice().length && (getTasksBySlice().length % elementsByPage === 0)) {
-        if (page !== pages.length - 1) {
-          page = pages.length + 1;
-        } else {
-          page += 1;
-        }
-      }
 
-      await fetch(`${URL}tasks/`, {
+      await fetch(`${baseURL}tasks/`, {
         method: 'POST',
         headers: {
           Accept: 'application/json, text/plain, */*',
@@ -288,39 +284,41 @@
         },
         body: JSON.stringify(currentTask),
       });
-        // return await response.json();
-      getAllTasks();
 
-      // tasks.push(currentTask);
+      if (tasks.length && (tasks.length % elementsByPage === 0)) {
+        if (page !== pages.length) {
+          page = pages.length + 1;
+        } else {
+          page += 1;
+        }
+      }
+      getAllTasks(baseURL, `tasks/?offset=${(page - 1) * elementsByPage}`);
     }
   };
 
   const deleteTodo = async (modifyingTodoID) => {
-    // tasks = tasks.filter((task) => task.id !== +modifyingTodoID);
-    await fetch(`${URL}tasks/${modifyingTodoID}/`, {
+    await fetch(`${baseURL}tasks/${modifyingTodoID}/`, {
       method: 'DELETE',
       headers: {
         Accept: 'application/json, text/plain, */*',
         'Content-Type': 'application/json',
       },
     });
-    // return await response.json();
-    getAllTasks();
-    const numberTasks = getTasksBySlice().length % elementsByPage;
-    if ((numberTasks === 0) && page === pages.length && page - 1 !== 0) {
+    if ((tasks.length === 1) && page === pages.length && page - 1 !== 0) {
       page -= 1;
     }
+    getAllTasks(baseURL, `tasks/?offset=${(page - 1) * elementsByPage}`);
   };
 
   const checkTodo = async (modifyingTodoID) => {
-    const numberTasks = getTasksBySlice().length % elementsByPage;
+    const numberTasks = tasks.length % elementsByPage;
     if ((numberTasks - 1 === 0) && page === pages.length && page - 1 !== 0 && mode !== 'All') {
       page -= 1;
     }
 
     const currentTask = tasks.find((task) => task.id === +modifyingTodoID);
 
-    await fetch(`${URL}tasks/${modifyingTodoID}/`, {
+    await fetch(`${baseURL}tasks/${modifyingTodoID}/`, {
       method: 'PATCH',
       headers: {
         Accept: 'application/json, text/plain, */*',
@@ -353,14 +351,8 @@
   };
 
   const checkAll = async () => {
-    // tasks.forEach((item) => {
-    //   const currentTask = item;
-    //   currentTask.completed = futureStatus;
-    // });
-    // futureStatus = !futureStatus;
-    // page = 1;
-    // render();
-    await fetch(`${URL}complete-all/`, {
+    page = 1;
+    await fetch(`${baseURL}complete-all/`, {
       method: 'PUT',
       headers: {
         Accept: 'application/json, text/plain, */*',
@@ -373,7 +365,7 @@
   };
 
   const clearCompleted = async () => {
-    await fetch(`${URL}clear-completed/`, {
+    await fetch(`${baseURL}clear-completed/`, {
       method: 'DELETE',
       headers: {
         Accept: 'application/json, text/plain, */*',
@@ -389,12 +381,6 @@
   taskInput.addEventListener('keyup', addTodo);
   toggleAll.addEventListener('click', checkAll);
   clearCompletedButton.addEventListener('click', clearCompleted);
-
-  const getAllTasks = async () => {
-    const response = await fetch(`${URL}tasks/`);
-    tasks = await response.json();
-    render();
-  };
 
   getAllTasks();
 }());

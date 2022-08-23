@@ -7,6 +7,10 @@ class TaskSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)
     name = serializers.CharField(max_length=50, required=False)
     completed = serializers.BooleanField(default=False)
+    allTasks = serializers.IntegerField
+    activeTasks = serializers.IntegerField
+    completedTasks = serializers.IntegerField
+
 
     def create(self, validated_data):
         return Task.objects.create(**validated_data)
