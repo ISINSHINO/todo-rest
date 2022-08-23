@@ -1,3 +1,4 @@
+from functools import partial
 from rest_framework import viewsets
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
@@ -51,7 +52,7 @@ class TaskViewSet(viewsets.ViewSet, TaskPagination):
         except:
             return Response({"message": "Method PATCH not allowed"})
 
-        serializer = TaskSerializer(data=request.data, instance=instance)
+        serializer = TaskSerializer(data=request.data, instance=instance, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response({"message": "Successfully updated"})
