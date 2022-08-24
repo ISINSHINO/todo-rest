@@ -35,33 +35,23 @@
 
   const { _ } = window;
 
-  const getTasksByMode = () => {
-    let tasksToRender = [];
-    switch (mode) {
-      case 'All':
-        tasksToRender = [...tasks];
-        break;
-      case 'Active':
-        tasksToRender = tasks.filter((task) => !task.completed);
-        break;
-      case 'Completed':
-        tasksToRender = tasks.filter((task) => task.completed);
-        break;
-      default:
-        break;
-    }
-    return tasksToRender;
-  };
-
-  const getAllTasks = async (path = `tasks/?page=${page}`) => {
-    const response = await fetch(`${baseURL}${path}&status=${mode}`); //  "http://127.0.0.1:8000/" + 'tasks/?page=1&status=' + 'all'
-    const data = await response.json();
-    tasks = data.results;
-    tasksCount = data.count;
-    allTasks = data.all;
-    activeTasks = data.active;
-    completedTasks = data.completed;
-    render();
+  const getAllTasks = (path = `tasks/?page=${page}`) => {
+    fetch(`${baseURL}${path}&status=${mode}`)
+      .then((response) => {
+        if (response.ok) {
+          return response.json();
+        }
+        throw new Error();
+      })
+      .then((data) => {
+        tasks = data.results;
+        tasksCount = data.count;
+        allTasks = data.all;
+        activeTasks = data.active;
+        completedTasks = data.completed;
+        render();
+      })
+      .catch(() => alert('Server error'));
   };
 
   const getTabName = (name) => name.textContent.trim().split(' ')[0];
@@ -85,24 +75,27 @@
     taskContainer.append(editingInput);
     editingInput.focus();
 
-    // const currentTask = tasks.find((item) => item.id === +modifyingTodoID);
-
-    const changeNameByID = async (value) => {
+    const changeNameByID = (value) => {
       if (normalizeStr(value)) {
-        await fetch(`${baseURL}tasks/${modifyingTodoID}/`, {
+        fetch(`${baseURL}tasks/${modifyingTodoID}/`, {
           method: 'PATCH',
           headers: {
-            Accept: 'application/json, text/plain, */*',
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(
             {
               name: normalizeStr(value),
-              // checked: currentTask.completed,
             },
           ),
-        });
-        getAllTasks();
+        })
+          .then((response) => {
+            if (response.ok) {
+              getAllTasks();
+            } else {
+              throw new Error();
+            }
+          })
+          .catch(() => alert('Server error'));
       }
     };
 
@@ -159,6 +152,7 @@
   };
 
   const changePage = (event) => {
+    const prevPageValue = page;
     switch (event.target.textContent.trim()) {
       case '«':
         if (page !== 1 && tasks.length) {
@@ -175,7 +169,9 @@
       default:
         if (event.target.tagName.toLowerCase() === 'a') {
           page = +event.target.textContent;
-          getAllTasks();
+          if (page !== prevPageValue) {
+            getAllTasks();
+          }
         }
         break;
     }
@@ -276,7 +272,7 @@
     getAllTasks();
   };
 
-  const addTodo = async (event) => {
+  const addTodo = (event) => {
     event.preventDefault();
     if ((event.code === ENTER || event.type === 'click') && normalizeStr(taskInput.value).length) {
       const currentTask = {
@@ -285,58 +281,74 @@
       };
       taskInput.value = '';
 
-      await fetch(`${baseURL}tasks/`, {
+      fetch(`${baseURL}tasks/`, {
         method: 'POST',
         headers: {
-          Accept: 'application/json, text/plain, */*',
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(currentTask),
-      });
-
-      if (tasks.length && (tasks.length % elementsByPage === 0)) {
-        if (page !== pages.length) {
-          page = pages.length + 1;
-        } else {
-          page += 1;
-        }
-      }
-      getAllTasks();
+      })
+        .then((response) => {
+          if (response.ok) {
+            if (tasks.length && (tasks.length % elementsByPage === 0)) {
+              if (page !== pages.length) {
+                page = pages.length + 1;
+              } else {
+                page += 1;
+              }
+            }
+            getAllTasks();
+          } else {
+            throw new Error();
+          }
+        })
+        .catch(() => alert('Server error'));
     }
   };
 
-  const deleteTodo = async (modifyingTodoID) => {
-    await fetch(`${baseURL}tasks/${modifyingTodoID}/`, {
+  const deleteTodo = (modifyingTodoID) => {
+    fetch(`${baseURL}tasks/${modifyingTodoID}/`, {
       method: 'DELETE',
       headers: {
-        Accept: 'application/json, text/plain, */*',
         'Content-Type': 'application/json',
       },
-    });
-    if ((tasks.length === 1) && page === pages.length && page - 1 !== 0) {
-      page -= 1;
-    }
-    getAllTasks();
+    })
+      .then((response) => {
+        if (response.ok) {
+          if ((tasks.length === 1) && page === pages.length && page - 1 !== 0) {
+            page -= 1;
+          }
+          getAllTasks();
+        } else {
+          throw new Error();
+        }
+      })
+      .catch(() => alert('Server error'));
   };
 
-  const checkTodo = async (modifyingTodoID) => {
+  const checkTodo = (modifyingTodoID) => {
     const numberTasks = tasks.length % elementsByPage;
-    if ((numberTasks - 1 === 0) && page === pages.length && page - 1 !== 0 && mode !== 'All') {
+    if ((numberTasks - 1 === 0) && page === pages.length && page - 1 !== 0 && mode !== 'all') {
       page -= 1;
     }
 
     const currentTask = tasks.find((task) => task.id === +modifyingTodoID);
 
-    await fetch(`${baseURL}tasks/${modifyingTodoID}/`, {
+    fetch(`${baseURL}tasks/${modifyingTodoID}/`, {
       method: 'PATCH',
       headers: {
-        Accept: 'application/json, text/plain, */*',
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ completed: !currentTask.completed }),
-    });
-
-    getAllTasks();
+    })
+      .then((response) => {
+        if (response.ok) {
+          getAllTasks();
+        } else {
+          throw new Error();
+        }
+      })
+      .catch(() => alert('Server error'));
   };
 
   const modifyList = (event) => {
@@ -359,29 +371,39 @@
     }
   };
 
-  const checkAll = async () => {
-    // page = 1;
-    await fetch(`${baseURL}complete-all/`, {
+  const checkAll = () => {
+    fetch(`${baseURL}complete-all/`, {
       method: 'PUT',
       headers: {
-        Accept: 'application/json, text/plain, */*',
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ completed: futureStatus }),
-    });
-    futureStatus = !futureStatus;
-    getAllTasks();
+    })
+      .then((response) => {
+        if (response.ok) {
+          futureStatus = !futureStatus;
+          page = 1;
+          getAllTasks();
+        } else {
+          throw new Error();
+        }
+      })
+      .catch(() => alert('Server error'));
   };
 
-  const clearCompleted = async () => {
-    await fetch(`${baseURL}clear-completed/`, {
+  const clearCompleted = () => {
+    fetch(`${baseURL}clear-completed/`, {
       method: 'DELETE',
-      headers: {
-        Accept: 'application/json, text/plain, */*',
-        'Content-Type': 'application/json',
-      },
-    });
-    getAllTasks();
+      headers: { 'Content-Type': 'application/json', },
+    })
+      .then((response) => {
+        if (response.ok) {
+          getAllTasks();
+        } else {
+          throw new Error();
+        }
+      })
+      .catch(() => alert('Server error'));
   };
 
   tabContainer.addEventListener('click', changeCurrentTab);
