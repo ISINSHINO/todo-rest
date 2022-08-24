@@ -35,7 +35,8 @@
 
   const { _ } = window;
 
-  const getAllTasks = (path = `tasks/?page=${page}`) => {
+  const getAllTasks = () => {
+    const path = `tasks/?page=${page}`;
     fetch(`${baseURL}${path}&status=${mode}`)
       .then((response) => {
         if (response.ok) {
@@ -51,7 +52,7 @@
         completedTasks = data.completed;
         render();
       })
-      .catch(() => alert('Server error'));
+      .catch((error) => alert(`Server error: ${error.message}`));
   };
 
   const getTabName = (name) => name.textContent.trim().split(' ')[0];
@@ -79,14 +80,8 @@
       if (normalizeStr(value)) {
         fetch(`${baseURL}tasks/${modifyingTodoID}/`, {
           method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(
-            {
-              name: normalizeStr(value),
-            },
-          ),
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: normalizeStr(value) }),
         })
           .then((response) => {
             if (response.ok) {
@@ -95,7 +90,7 @@
               throw new Error();
             }
           })
-          .catch(() => alert('Server error'));
+          .catch((error) => alert(`Server error: ${error.message}`));
       }
     };
 
@@ -283,9 +278,7 @@
 
       fetch(`${baseURL}tasks/`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(currentTask),
       })
         .then((response) => {
@@ -302,16 +295,14 @@
             throw new Error();
           }
         })
-        .catch(() => alert('Server error'));
+        .catch((error) => alert(`Server error: ${error.message}`));
     }
   };
 
   const deleteTodo = (modifyingTodoID) => {
     fetch(`${baseURL}tasks/${modifyingTodoID}/`, {
       method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
     })
       .then((response) => {
         if (response.ok) {
@@ -323,7 +314,7 @@
           throw new Error();
         }
       })
-      .catch(() => alert('Server error'));
+      .catch((error) => alert(`Server error: ${error.message}`));
   };
 
   const checkTodo = (modifyingTodoID) => {
@@ -336,9 +327,7 @@
 
     fetch(`${baseURL}tasks/${modifyingTodoID}/`, {
       method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ completed: !currentTask.completed }),
     })
       .then((response) => {
@@ -348,7 +337,7 @@
           throw new Error();
         }
       })
-      .catch(() => alert('Server error'));
+      .catch((error) => alert(`Server error: ${error.message}`));
   };
 
   const modifyList = (event) => {
@@ -374,9 +363,7 @@
   const checkAll = () => {
     fetch(`${baseURL}complete-all/`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ completed: futureStatus }),
     })
       .then((response) => {
@@ -388,13 +375,13 @@
           throw new Error();
         }
       })
-      .catch(() => alert('Server error'));
+      .catch((error) => alert(`Server error: ${error.message}`));
   };
 
   const clearCompleted = () => {
     fetch(`${baseURL}clear-completed/`, {
       method: 'DELETE',
-      headers: { 'Content-Type': 'application/json', },
+      headers: { 'Content-Type': 'application/json' },
     })
       .then((response) => {
         if (response.ok) {
@@ -403,7 +390,7 @@
           throw new Error();
         }
       })
-      .catch(() => alert('Server error'));
+      .catch((error) => alert(`Server error: ${error.message}`));
   };
 
   tabContainer.addEventListener('click', changeCurrentTab);

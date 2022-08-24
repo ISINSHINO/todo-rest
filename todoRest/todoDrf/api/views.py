@@ -27,7 +27,7 @@ class TaskViewSet(viewsets.ViewSet, TaskPagination):
         serializer = TaskSerializer(page, many = True)
         return self.paginator.get_paginated_response(serializer.data, allTasks, activeTasks, completedTasks)
 
-    def retrieve(self, request, pk=None):
+    def retrieve(self, pk=None):
         """Return task with exact primary key."""
         tasks = Task.objects.all()
         task = get_object_or_404(tasks, pk=pk)
@@ -41,7 +41,7 @@ class TaskViewSet(viewsets.ViewSet, TaskPagination):
         serializer.save()
         return Response({"message": "Successfully created"}, status=status.HTTP_200_OK)
 
-    def partial_update(self, request, *args, **kwargs):
+    def partial_update(self, request, **kwargs):
         """Change task name or status."""
         pk = kwargs.get("pk", None)
         if not pk:
@@ -57,7 +57,7 @@ class TaskViewSet(viewsets.ViewSet, TaskPagination):
         serializer.save()
         return Response({"message": "Successfully updated"}, status=status.HTTP_200_OK)
 
-    def destroy(self, request, *args, **kwargs):
+    def destroy(self, **kwargs):
         """Delete task with exact primary key."""
         pk = kwargs.get("pk", None)
         if not pk:
@@ -79,5 +79,5 @@ class TaskViewSet(viewsets.ViewSet, TaskPagination):
 
     def complete_all(self, request):
         """Mark all tasks as completed."""
-        instance = Task.objects.all().update(completed = request.data['completed'])
+        Task.objects.all().update(completed = request.data['completed'])
         return Response({"message": "Successfully updated"}, status=status.HTTP_200_OK)
