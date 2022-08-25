@@ -2,7 +2,7 @@
   const ENTER = 'Enter';
   const ESCAPE = 'Escape';
 
-  const baseURL = 'http://127.0.0.1:8000/';
+  const baseURL = 'http://localhost:8000/';
 
   const list = document.querySelector('.list-group');
 
@@ -35,9 +35,8 @@
 
   const { _ } = window;
 
-  const getAllTasks = () => {
-    const path = `tasks/?page=${page}`;
-    fetch(`${baseURL}${path}&status=${mode}`)
+  const fetchTasks = () => {
+    fetch(`${baseURL}tasks/?page=${page}&status=${mode}`)
       .then((response) => {
         if (response.ok) {
           return response.json();
@@ -85,7 +84,7 @@
         })
           .then((response) => {
             if (response.ok) {
-              getAllTasks();
+              fetchTasks();
             } else {
               throw new Error();
             }
@@ -152,20 +151,24 @@
       case '«':
         if (page !== 1 && tasks.length) {
           page -= 1;
-          getAllTasks();
+        } else {
+          page = pages.length;
         }
+        fetchTasks();
         break;
       case '»':
         if (page !== pages.length && tasks.length) {
           page += 1;
-          getAllTasks();
+        } else {
+          page = 1;
         }
+        fetchTasks();
         break;
       default:
         if (event.target.tagName.toLowerCase() === 'a') {
           page = +event.target.textContent;
           if (page !== prevPageValue) {
-            getAllTasks();
+            fetchTasks();
           }
         }
         break;
@@ -260,11 +263,13 @@
   };
 
   const changeCurrentTab = (event) => {
-    const currentTab = event.target;
-    mode = getTabName(currentTab).toLowerCase();
-    page = 1;
-    tabs.forEach((tab) => toggleTab(tab));
-    getAllTasks();
+    const currentTab = getTabName(event.target).toLowerCase();
+    if (mode !== currentTab) {
+      mode = currentTab;
+      page = 1;
+      tabs.forEach((tab) => toggleTab(tab));
+      fetchTasks();
+    }
   };
 
   const addTodo = (event) => {
@@ -283,14 +288,14 @@
       })
         .then((response) => {
           if (response.ok) {
-            if (tasks.length && (tasks.length % elementsByPage === 0)) {
+            if (tasks.length && (tasksCount % elementsByPage === 0)) {
               if (page !== pages.length) {
                 page = pages.length + 1;
               } else {
                 page += 1;
               }
             }
-            getAllTasks();
+            fetchTasks();
           } else {
             throw new Error();
           }
@@ -309,7 +314,7 @@
           if ((tasks.length === 1) && page === pages.length && page - 1 !== 0) {
             page -= 1;
           }
-          getAllTasks();
+          fetchTasks();
         } else {
           throw new Error();
         }
@@ -332,7 +337,7 @@
     })
       .then((response) => {
         if (response.ok) {
-          getAllTasks();
+          fetchTasks();
         } else {
           throw new Error();
         }
@@ -370,7 +375,7 @@
         if (response.ok) {
           futureStatus = !futureStatus;
           page = 1;
-          getAllTasks();
+          fetchTasks();
         } else {
           throw new Error();
         }
@@ -385,7 +390,7 @@
     })
       .then((response) => {
         if (response.ok) {
-          getAllTasks();
+          fetchTasks();
         } else {
           throw new Error();
         }
@@ -400,5 +405,5 @@
   toggleAll.addEventListener('click', checkAll);
   clearCompletedButton.addEventListener('click', clearCompleted);
 
-  getAllTasks();
+  document.addEventListener('DOMContentLoaded', fetchTasks);
 }());
