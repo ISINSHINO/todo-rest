@@ -4,7 +4,7 @@ from .models import Task
 
 class TaskSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)
-    name = serializers.CharField(max_length=50, required=False)
+    name = serializers.CharField(max_length=50)
     completed = serializers.BooleanField(default=False)
 
     def create(self, validated_data):

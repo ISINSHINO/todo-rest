@@ -37,6 +37,22 @@
 
   const { _ } = window;
 
+  const createToast = (toastMessage) => {
+    const newToast = document.createElement('div');
+    newToast.classList.add('toast', 'toast-danger', 'show');
+
+    const newToastBody = document.createElement('div');
+    newToastBody.classList.add('toast-body');
+    newToastBody.textContent = toastMessage || 'Something went wrong';
+
+    newToast.append(newToastBody);
+    toastContainer.append(newToast);
+
+    setTimeout(() => {
+      newToast.remove();
+    }, 1500);
+  };
+
   const fetchTasks = () => {
     fetch(`${baseURL}tasks/?page=${page}&status=${status}`)
       .then((response) => {
@@ -54,22 +70,6 @@
         render();
       })
       .catch((error) => createToast(error.message));
-  };
-
-  const createToast = (toastMessage) => {
-    const newToast = document.createElement('div');
-    newToast.classList.add('toast', 'toast-danger', 'show');
-
-    const newToastBody = document.createElement('div');
-    newToastBody.classList.add('toast-body');
-    newToastBody.textContent = toastMessage;
-
-    newToast.append(newToastBody);
-    toastContainer.append(newToast);
-
-    setTimeout(() => {
-      newToast.remove();
-    }, 1500);
   };
 
   const getTabName = (name) => name.textContent.trim().split(' ')[0];
@@ -292,7 +292,7 @@
 
   const addTodo = (event) => {
     event.preventDefault();
-    if ((event.code === ENTER || event.type === 'click') && normalizeStr(taskInput.value).length) {
+    if ((event.type === 'click') && normalizeStr(taskInput.value).length) {
       const currentTask = {
         name: normalizeStr(taskInput.value),
         completed: false,
