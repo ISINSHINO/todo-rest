@@ -20,6 +20,8 @@
 
   const pagination = document.querySelector('.pagination');
 
+  const toastContainer = document.querySelector('.toast-container');
+
   const elementsByPage = 5;
   let page = 1;
   let pages = [];
@@ -31,12 +33,12 @@
 
   let tasks = [];
   let futureStatus = true;
-  let mode = 'all';
+  let status = 'all';
 
   const { _ } = window;
 
   const fetchTasks = () => {
-    fetch(`${baseURL}tasks/?page=${page}&status=${mode}`)
+    fetch(`${baseURL}tasks/?page=${page}&status=${status}`)
       .then((response) => {
         if (response.ok) {
           return response.json();
@@ -51,7 +53,23 @@
         completedTasks = data.completed;
         render();
       })
-      .catch((error) => alert(`Server error: ${error.message}`));
+      .catch((error) => createToast(error.message));
+  };
+
+  const createToast = (toastMessage) => {
+    const newToast = document.createElement('div');
+    newToast.classList.add('toast', 'toast-danger', 'show');
+
+    const newToastBody = document.createElement('div');
+    newToastBody.classList.add('toast-body');
+    newToastBody.textContent = toastMessage;
+
+    newToast.append(newToastBody);
+    toastContainer.append(newToast);
+
+    setTimeout(() => {
+      newToast.remove();
+    }, 1500);
   };
 
   const getTabName = (name) => name.textContent.trim().split(' ')[0];
@@ -89,7 +107,7 @@
               throw new Error();
             }
           })
-          .catch((error) => alert(`Server error: ${error.message}`));
+          .catch((error) => createToast(error.message));
       }
     };
 
@@ -254,8 +272,8 @@
 
   const toggleTab = (tab) => {
     const iterTab = tab.querySelector('.nav-link');
-    const tabMode = getTabName(iterTab).toLowerCase();
-    if (tabMode !== mode) {
+    const tabStatus = getTabName(iterTab).toLowerCase();
+    if (tabStatus !== status) {
       iterTab.classList.remove('active');
     } else {
       iterTab.classList.add('active');
@@ -264,8 +282,8 @@
 
   const changeCurrentTab = (event) => {
     const currentTab = getTabName(event.target).toLowerCase();
-    if (mode !== currentTab) {
-      mode = currentTab;
+    if (status !== currentTab) {
+      status = currentTab;
       page = 1;
       tabs.forEach((tab) => toggleTab(tab));
       fetchTasks();
@@ -279,6 +297,7 @@
         name: normalizeStr(taskInput.value),
         completed: false,
       };
+
       taskInput.value = '';
 
       fetch(`${baseURL}tasks/`, {
@@ -288,7 +307,7 @@
       })
         .then((response) => {
           if (response.ok) {
-            if (tasks.length && (tasksCount % elementsByPage === 0)) {
+            if (tasksCount && (tasksCount % elementsByPage === 0) && status !== 'completed') {
               if (page !== pages.length) {
                 page = pages.length + 1;
               } else {
@@ -300,7 +319,7 @@
             throw new Error();
           }
         })
-        .catch((error) => alert(`Server error: ${error.message}`));
+        .catch((error) => createToast(error.message));
     }
   };
 
@@ -319,12 +338,12 @@
           throw new Error();
         }
       })
-      .catch((error) => alert(`Server error: ${error.message}`));
+      .catch((error) => createToast(error.message));
   };
 
   const checkTodo = (modifyingTodoID) => {
     const numberTasks = tasks.length % elementsByPage;
-    if ((numberTasks - 1 === 0) && page === pages.length && page - 1 !== 0 && mode !== 'all') {
+    if ((numberTasks - 1 === 0) && page === pages.length && page - 1 !== 0 && status !== 'all') {
       page -= 1;
     }
 
@@ -342,7 +361,7 @@
           throw new Error();
         }
       })
-      .catch((error) => alert(`Server error: ${error.message}`));
+      .catch((error) => createToast(error.message));
   };
 
   const modifyList = (event) => {
@@ -380,7 +399,7 @@
           throw new Error();
         }
       })
-      .catch((error) => alert(`Server error: ${error.message}`));
+      .catch((error) => createToast(error.message));
   };
 
   const clearCompleted = () => {
@@ -395,7 +414,7 @@
           throw new Error();
         }
       })
-      .catch((error) => alert(`Server error: ${error.message}`));
+      .catch((error) => createToast(error.message));
   };
 
   tabContainer.addEventListener('click', changeCurrentTab);

@@ -57,7 +57,7 @@ class TaskViewSet(viewsets.ViewSet, TaskPagination):
         serializer.save()
         return Response({"message": "Successfully updated"}, status=status.HTTP_200_OK)
 
-    def destroy(self, **kwargs):
+    def destroy(self, request, *args, **kwargs):
         """Delete task with exact primary key."""
         pk = kwargs.get("pk", None)
         if not pk:
